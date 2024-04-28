@@ -30,6 +30,10 @@ export const deleteContact = async (req, res) => {
     const { id } = req.params;
     const contact = await contactsService.removeContact(id);
 
+    if (!contact) {
+      return res.status(404).send({ message: "Not found" });
+    }
+
     res.status(200).send(contact);
   } catch (error) {
     res.status(404).send({ message: "Not found" });
