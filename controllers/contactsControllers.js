@@ -15,9 +15,13 @@ export const getOneContact = async (req, res) => {
     const { id } = req.params;
     const contact = await contactsService.getContactById(id);
 
+    if (!contact) {
+      return res.status(404).send({ message: "Not found" });
+    }
+
     res.status(200).send(contact);
   } catch (error) {
-    res.status(404).send({ message: "Not found" });
+    res.status(404).send({ message: "Something went wrong!" });
   }
 };
 
@@ -39,8 +43,9 @@ export const createContact = async (req, res) => {
     const { name, email, phone } = value;
 
     if (error) {
-      res.status(400).send({ message: error.message });
+      return res.status(400).send({ message: error.message });
     }
+
     const newContact = await contactsService.addContact(name, email, phone);
 
     res.status(201).send(newContact);
@@ -48,6 +53,7 @@ export const createContact = async (req, res) => {
     res.status(400).send({ message: error.message });
   }
 };
+
 export const updateContact = async (req, res) => {
   const { error, value } = updateContactSchema.validate(req.body);
 
@@ -68,7 +74,7 @@ export const updateContact = async (req, res) => {
       return res.status(404).send({ message: "Not found" });
     }
 
-    res.status(200).send(updatedContact);
+    return res.status(200).send(updatedContact);
   } catch (error) {
     console.error(error);
     res.status(400).send({ message: "An error occurred" });
