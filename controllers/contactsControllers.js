@@ -1,6 +1,5 @@
 import Contact from "../models/contact.js";
 
-import contactsService from "../services/contactsServices.js";
 import {
   createContactSchema,
   updateContactSchema,
@@ -9,20 +8,17 @@ import {
 export const getAllContacts = async (req, res) => {
   try {
     const contacts = await Contact.find();
-    console.log(contacts);
 
     res.status(200).send(contacts);
   } catch (error) {
     console.error(error);
   }
-
-  res.send(contacts);
 };
 
 export const getOneContact = async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await contactsService.getContactById(id);
+    const contact = await Contact.findById(id);
 
     if (!contact) {
       return res.status(404).send({ message: "Not found" });
@@ -37,7 +33,7 @@ export const getOneContact = async (req, res) => {
 export const deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await contactsService.removeContact(id);
+    const contact = await Contact.findByIdAndDelete(id);
 
     if (!contact) {
       return res.status(404).send({ message: "Not found" });
@@ -55,17 +51,13 @@ export const createContact = async (req, res) => {
 
     const { name, email, phone, favorite } = value;
 
-    console.log(value);
-
     if (error) {
       return res.status(400).send({ message: error.message });
     }
 
     await Contact.create({ name, email, phone, favorite });
 
-    // const newContact = await contactsService.addContact(name, email, phone);
-
-    res.status(201).send("Contact");
+    res.status(201).send(value);
   } catch (error) {
     res.status(400).send({ message: error.message });
   }
@@ -79,8 +71,9 @@ export const updateContact = async (req, res) => {
   }
 
   const { name, email, phone } = value;
+
   try {
-    const updatedContact = await contactsService.updateContact(
+    const updatedContact = await Contact.findByIdAndUpdate(
       req.params.id,
       name,
       email,
@@ -95,5 +88,23 @@ export const updateContact = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(400).send({ message: "An error occurred" });
+  }
+};
+
+export const updateFavorite = async (req, res) => {
+  const { id } = req.params;
+  const updatedContact = req.body;
+
+  if (!updatedContact.favorite) {
+    return res.status(400).send({ message: "Missing field favorite" });
+  }
+  try {
+    const contact = await Contact.findByIdAndUpdate(id, updatedContact, {
+      new: true,
+    });
+
+    res.status(200).send(contact);
+  } catch (error) {
+    res.status(400).send({ message: "Not found" });
   }
 };
