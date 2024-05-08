@@ -1,3 +1,5 @@
+import Contact from "../models/contact.js";
+
 import contactsService from "../services/contactsServices.js";
 import {
   createContactSchema,
@@ -5,7 +7,14 @@ import {
 } from "../schemas/contactsSchemas.js";
 
 export const getAllContacts = async (req, res) => {
-  const contacts = await contactsService.listContacts();
+  // const contacts = await contactsService.listContacts();
+  try {
+    const contacts = await Contact.find();
+
+    res.status(200).send(contacts);
+  } catch (error) {
+    console.error(error);
+  }
 
   res.send(contacts);
 };
@@ -44,15 +53,19 @@ export const createContact = async (req, res) => {
   try {
     const { error, value } = createContactSchema.validate(req.body);
 
-    const { name, email, phone } = value;
+    const { name, email, phone, favorite } = value;
+
+    console.log(value);
 
     if (error) {
       return res.status(400).send({ message: error.message });
     }
 
-    const newContact = await contactsService.addContact(name, email, phone);
+    await Contact.create({ name, email, phone, favorite });
 
-    res.status(201).send(newContact);
+    // const newContact = await contactsService.addContact(name, email, phone);
+
+    res.status(201).send("Contact");
   } catch (error) {
     res.status(400).send({ message: error.message });
   }
