@@ -7,9 +7,9 @@ import {
 } from "../schemas/contactsSchemas.js";
 
 export const getAllContacts = async (req, res) => {
-  // const contacts = await contactsService.listContacts();
   try {
     const contacts = await Contact.find();
+    console.log(contacts);
 
     res.status(200).send(contacts);
   } catch (error) {
