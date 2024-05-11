@@ -49,10 +49,14 @@ export const createContact = async (req, res) => {
   try {
     const { error, value } = createContactSchema.validate(req.body);
 
-    const { name, email, phone, favorite } = value;
+    let { name, email, phone, favorite } = value;
 
     if (error) {
       return res.status(400).send({ message: error.message });
+    }
+
+    if (!favorite) {
+      value.favorite = false;
     }
 
     await Contact.create({ name, email, phone, favorite });
