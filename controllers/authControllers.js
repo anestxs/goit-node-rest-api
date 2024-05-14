@@ -1,0 +1,115 @@
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+import User from "../models/User.js";
+
+export async function register(req, res, next) {
+  const { email, password } = req.body;
+
+  const emailInLowerCase = email.toLowerCase();
+
+  try {
+    const user = await User.findOne({ email: emailInLowerCase });
+
+    if (user !== null) {
+      return res.status(409).json({
+        message: "User has already registered!",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+      email: emailInLowerCase,
+      password: passwordHash,
+    });
+
+    res.status(201).send({
+      user: {
+        email: newUser.email,
+        subscription: newUser.subscription,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function login(req, res, next) {
+  const { email, password } = req.body;
+
+  const emailInLowerCase = email.toLowerCase();
+
+  try {
+    const user = await User.findOne({ email: emailInLowerCase });
+
+    if (user === null) {
+      return res.status(401).send({
+        message: "Email or password is wrong!",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).send({
+        message: "Email or password is wrong!",
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user._id, name: user.name },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const updatedUser = await User.findByIdAndUpdate(user._id, { token });
+
+    res.status(200).send({
+      user: {
+        email: updatedUser.email,
+        subscription: updatedUser.subscription,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function logout(req, res, next) {
+  const { user } = req;
+
+  try {
+    await User.findByIdAndUpdate(user._id, { token: null });
+
+    if (user === null) {
+      return res.status(401).send({
+        message: "Not authorized",
+      });
+    }
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getUser(req, res, next) {
+  const { user } = req;
+
+  try {
+    if (user === null) {
+      return res.status(401).send({
+        message: "Not authorized",
+      });
+    }
+
+    res.status(200).send({
+      user: {
+        email: user.email,
+        subscription: user.subscription,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
