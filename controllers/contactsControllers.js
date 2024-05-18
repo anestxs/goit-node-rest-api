@@ -7,7 +7,7 @@ import {
 
 export const getAllContacts = async (req, res) => {
   try {
-    const contacts = await Contact.find();
+    const contacts = await Contact.find({ owner: req.user.id });
 
     res.status(200).send(contacts);
   } catch (error) {
@@ -18,7 +18,7 @@ export const getAllContacts = async (req, res) => {
 export const getOneContact = async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await Contact.findById(id);
+    const contact = await Contact.findOne({ id, owner: req.user.id });
 
     if (!contact) {
       return res.status(404).send({ message: "Not found" });
@@ -33,7 +33,7 @@ export const getOneContact = async (req, res) => {
 export const deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await Contact.findByIdAndDelete(id);
+    const contact = await Contact.findOneAndDelete({ id, owner: req.user.id });
 
     if (!contact) {
       return res.status(404).send({ message: "Not found" });
@@ -77,7 +77,7 @@ export const updateContact = async (req, res) => {
   const { name, email, phone } = value;
 
   try {
-    const updatedContact = await Contact.findByIdAndUpdate(
+    const updatedContact = await Contact.findOneAndUpdate(
       req.params.id,
       name,
       email,
@@ -103,7 +103,7 @@ export const updateFavorite = async (req, res) => {
     return res.status(400).send({ message: "Missing field favorite" });
   }
   try {
-    const contact = await Contact.findByIdAndUpdate(id, updatedContact, {
+    const contact = await Contact.findOneAndUpdate(id, updatedContact, {
       new: true,
     });
 

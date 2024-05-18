@@ -3,8 +3,12 @@ import jwt from "jsonwebtoken";
 
 import User from "../models/User.js";
 
+import { createUserSchema } from "../schemas/usersSchemas.js";
+
 export async function register(req, res, next) {
-  const { email, password } = req.body;
+  const { value } = createUserSchema.validate(req.body);
+
+  const { email, password } = value;
 
   const emailInLowerCase = email.toLowerCase();
 

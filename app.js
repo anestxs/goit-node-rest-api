@@ -5,6 +5,7 @@ import cors from "cors";
 
 import contactsRouter from "./routes/contactsRouter.js";
 import usersRouter from "./routes/usersRouter.js";
+import authMiddleware from "./middleware/authMiddleware.js";
 
 import "./db/db.js";
 
@@ -14,7 +15,7 @@ app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/contacts", contactsRouter);
+app.use("/api/contacts", authMiddleware, contactsRouter);
 app.use("/users", usersRouter);
 
 app.use((_, res) => {
