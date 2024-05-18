@@ -10,13 +10,19 @@ export async function register(req, res, next) {
 
   const { email, password } = value;
 
+  if (email === undefined || password === undefined) {
+    return res.status(400).send({
+      message: "Missing required fields!",
+    });
+  }
+
   const emailInLowerCase = email.toLowerCase();
 
   try {
     const user = await User.findOne({ email: emailInLowerCase });
 
     if (user !== null) {
-      return res.status(409).json({
+      return res.status(409).send({
         message: "User has already registered!",
       });
     }
