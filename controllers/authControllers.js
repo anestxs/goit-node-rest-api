@@ -48,6 +48,12 @@ export async function register(req, res, next) {
 export async function login(req, res, next) {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res
+      .status(400)
+      .send({ message: "Email and password are required!" });
+  }
+
   const emailInLowerCase = email.toLowerCase();
 
   try {
@@ -69,17 +75,14 @@ export async function login(req, res, next) {
 
     const token = jwt.sign(
       { id: user._id, name: user.name },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET_KEY,
       { expiresIn: "1h" }
     );
 
     const updatedUser = await User.findByIdAndUpdate(user._id, { token });
 
     res.status(200).send({
-      user: {
-        email: updatedUser.email,
-        subscription: updatedUser.subscription,
-      },
+      token,
     });
   } catch (error) {
     next(error);
@@ -104,9 +107,13 @@ export async function logout(req, res, next) {
 }
 
 export async function getUser(req, res, next) {
-  const { user } = req;
+  const autorizationHeader = req.headers.authorization;
+
+  const [bearer, token] = autorizationHeader.split(" ", 2);
 
   try {
+    const user = await User.findOne({ token });
+
     if (user === null) {
       return res.status(401).send({
         message: "Not authorized",

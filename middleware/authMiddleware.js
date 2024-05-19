@@ -18,32 +18,29 @@ export default function authMiddleware(req, res, next) {
     });
   }
 
-  async function tokenVerification(error, decode) {
-    if (error) {
-      return res.status(401).send({
-        message: "Invalid token",
-      });
+  jwt.verify(token, process.env.JWT_SECRET_KEY, async (err, decode) => {
+    if (err) {
+      return res.status(401).send({ message: "Invalid token" });
     }
-
     try {
       const user = await User.findById(decode.id);
 
       if (user === null) {
-        return res.status(401).send({
-          message: "Invalid token",
-        });
+        return res.status(401).send({ message: "Invalid token" });
+      }
+
+      if (user.token !== token) {
+        return res.status(401).send({ message: "Invalid token" });
       }
 
       req.user = {
         id: user._id,
-        email: user.email,
+        name: user.name,
       };
 
       next();
     } catch (error) {
       next(error);
     }
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, tokenVerification(error, decode));
+  });
 }

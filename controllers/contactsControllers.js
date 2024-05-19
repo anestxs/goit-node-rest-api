@@ -33,7 +33,7 @@ export const getOneContact = async (req, res) => {
 export const deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await Contact.findOneAndDelete({ id, owner: req.user.id });
+    const contact = await Contact.findOneAndDelete(id);
 
     if (!contact) {
       return res.status(404).send({ message: "Not found" });
@@ -51,6 +51,14 @@ export const createContact = async (req, res) => {
 
     let { name, email, phone, favorite } = value;
 
+    const contact = {
+      name,
+      email,
+      phone,
+      favorite,
+      owner: req.user.id,
+    };
+
     if (error) {
       return res.status(400).send({ message: error.message });
     }
@@ -59,9 +67,9 @@ export const createContact = async (req, res) => {
       value.favorite = false;
     }
 
-    await Contact.create({ name, email, phone, favorite });
+    await Contact.create(contact);
 
-    res.status(201).send(value);
+    res.status(201).send(contact);
   } catch (error) {
     res.status(400).send({ message: error.message });
   }
@@ -81,7 +89,8 @@ export const updateContact = async (req, res) => {
       req.params.id,
       name,
       email,
-      phone.toString()
+      phone.toString(),
+      { new: true }
     );
 
     if (!updatedContact) {
