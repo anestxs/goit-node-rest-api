@@ -56,7 +56,6 @@ export const createContact = async (req, res) => {
       email,
       phone,
       favorite,
-      owner: req.user.id,
     };
 
     if (error) {
@@ -67,9 +66,9 @@ export const createContact = async (req, res) => {
       value.favorite = false;
     }
 
-    await Contact.create(contact);
+    const createdContact = await Contact.create(contact);
 
-    res.status(201).send(contact);
+    res.status(201).send(createdContact);
   } catch (error) {
     res.status(400).send({ message: error.message });
   }
