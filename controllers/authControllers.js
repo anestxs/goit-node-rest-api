@@ -90,10 +90,8 @@ export async function login(req, res, next) {
 }
 
 export async function logout(req, res, next) {
-  const { user } = req;
-
   try {
-    await User.findByIdAndUpdate(user._id, { token: null });
+    const user = await User.findByIdAndUpdate(req.user.id, { token: null });
 
     if (user === null) {
       return res.status(401).send({

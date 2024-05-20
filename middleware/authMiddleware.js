@@ -35,7 +35,6 @@ export default function authMiddleware(req, res, next) {
 
       req.user = {
         id: user._id,
-        name: user.name,
       };
 
       next();
