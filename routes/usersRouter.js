@@ -12,7 +12,7 @@ const jsonParser = express.json();
 
 usersRouter.post("/register", jsonParser, register);
 usersRouter.post("/login", jsonParser, login);
-usersRouter.get("/logout", authMiddleware, logout);
+usersRouter.post("/logout", authMiddleware, logout);
 usersRouter.get("/current", authMiddleware, getUser);
 
 export default usersRouter;

@@ -71,7 +71,7 @@ export const createContact = async (req, res) => {
   }
 
   try {
-    const createdContact = await Contact.create(contact);
+    const createdContact = await Contact.create({ contact });
 
     res.status(201).send(createdContact);
   } catch (error) {
@@ -88,10 +88,18 @@ export const updateContact = async (req, res) => {
     return res.status(400).send({ message: error.details[0].message });
   }
 
+  console.log(id);
+
   try {
-    const updatedContact = await Contact.findByIdAndUpdate(id, value, {
-      new: true,
-    });
+    const updatedContact = await Contact.findOneAndUpdate(
+      { _id: id, owner: req.user.id },
+      value,
+      {
+        new: true,
+      }
+    );
+
+    console.log(updatedContact);
 
     if (!updatedContact) {
       return res.status(404).send({ message: "Not found" });
@@ -115,9 +123,13 @@ export const updateFavorite = async (req, res) => {
   }
 
   try {
-    const contact = await Contact.findByIdAndUpdate(id, updatedContact, {
-      new: true,
-    });
+    const contact = await Contact.findOneAndUpdate(
+      { _id: id, owner: req.user.id },
+      updatedContact,
+      {
+        new: true,
+      }
+    );
 
     res.status(200).send(contact);
   } catch (error) {
