@@ -7,7 +7,7 @@ import {
 
 export const getAllContacts = async (req, res) => {
   try {
-    const contacts = await Contact.find();
+    const contacts = await Contact.find({ owner: req.user.id });
 
     res.status(200).send(contacts);
   } catch (error) {
@@ -18,7 +18,8 @@ export const getAllContacts = async (req, res) => {
 export const getOneContact = async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await Contact.findById(id);
+
+    const contact = await Contact.findOne({ _id: id, owner: req.user.id });
 
     if (!contact) {
       return res.status(404).send({ message: "Not found" });
@@ -33,7 +34,10 @@ export const getOneContact = async (req, res) => {
 export const deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await Contact.findByIdAndDelete(id);
+    const contact = await Contact.findOneAndDelete({
+      owner: req.user.id,
+      _id: id,
+    });
 
     if (!contact) {
       return res.status(404).send({ message: "Not found" });
@@ -46,22 +50,30 @@ export const deleteContact = async (req, res) => {
 };
 
 export const createContact = async (req, res) => {
+  const { error, value } = createContactSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).send({ message: error.message });
+  }
+
+  let { name, email, phone, favorite } = value;
+
+  const contact = {
+    name,
+    email,
+    phone,
+    favorite,
+    owner: req.user.id,
+  };
+
+  if (!favorite) {
+    value.favorite = false;
+  }
+
   try {
-    const { error, value } = createContactSchema.validate(req.body);
+    const createdContact = await Contact.create({ contact });
 
-    let { name, email, phone, favorite } = value;
-
-    if (error) {
-      return res.status(400).send({ message: error.message });
-    }
-
-    if (!favorite) {
-      value.favorite = false;
-    }
-
-    await Contact.create({ name, email, phone, favorite });
-
-    res.status(201).send(value);
+    res.status(201).send(createdContact);
   } catch (error) {
     res.status(400).send({ message: error.message });
   }
@@ -70,19 +82,24 @@ export const createContact = async (req, res) => {
 export const updateContact = async (req, res) => {
   const { error, value } = updateContactSchema.validate(req.body);
 
+  const { id } = req.params;
+
   if (error) {
     return res.status(400).send({ message: error.details[0].message });
   }
 
-  const { name, email, phone } = value;
+  console.log(id);
 
   try {
-    const updatedContact = await Contact.findByIdAndUpdate(
-      req.params.id,
-      name,
-      email,
-      phone.toString()
+    const updatedContact = await Contact.findOneAndUpdate(
+      { _id: id, owner: req.user.id },
+      value,
+      {
+        new: true,
+      }
     );
+
+    console.log(updatedContact);
 
     if (!updatedContact) {
       return res.status(404).send({ message: "Not found" });
@@ -99,13 +116,20 @@ export const updateFavorite = async (req, res) => {
   const { id } = req.params;
   const updatedContact = req.body;
 
-  if (!updatedContact.favorite) {
+  console.log(updatedContact);
+
+  if (typeof updatedContact.favorite === "undefined") {
     return res.status(400).send({ message: "Missing field favorite" });
   }
+
   try {
-    const contact = await Contact.findByIdAndUpdate(id, updatedContact, {
-      new: true,
-    });
+    const contact = await Contact.findOneAndUpdate(
+      { _id: id, owner: req.user.id },
+      updatedContact,
+      {
+        new: true,
+      }
+    );
 
     res.status(200).send(contact);
   } catch (error) {
