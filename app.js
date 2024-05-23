@@ -13,12 +13,8 @@ app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());
 
-<<<<<<< Updated upstream
-app.use("/api/contacts", contactsRouter);
-=======
 app.use("/api/contacts", authMiddleware, contactsRouter);
 app.use("/api/users", usersRouter);
->>>>>>> Stashed changes
 
 app.use((_, res) => {
   res.status(404).json({ message: "Route not found" });
