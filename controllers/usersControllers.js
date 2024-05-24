@@ -5,6 +5,12 @@ import Jimp from "jimp";
 
 export async function uploadAvatar(req, res, next) {
   try {
+    if (!req.file) {
+      return res.status(400).send({
+        message: "No file uploaded",
+      });
+    }
+
     const file = await Jimp.read(req.file.path);
     await file.resize(250, 250).writeAsync(req.file.path);
 
@@ -15,7 +21,7 @@ export async function uploadAvatar(req, res, next) {
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { avatarURL: req.file.filename },
+      { avatarURL: "/avatars/" + req.file.filename },
       { new: true }
     );
 
