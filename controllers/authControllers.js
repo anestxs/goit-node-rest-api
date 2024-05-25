@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+import Gravatar from "gravatar";
+
 import User from "../models/User.js";
 
 import { createUserSchema } from "../schemas/usersSchemas.js";
@@ -18,6 +20,8 @@ export async function register(req, res, next) {
 
   const emailInLowerCase = email.toLowerCase();
 
+  const userProfilePic = Gravatar.url(emailInLowerCase, { protocol: "http" });
+
   try {
     const user = await User.findOne({ email: emailInLowerCase });
 
@@ -32,6 +36,7 @@ export async function register(req, res, next) {
     const newUser = await User.create({
       email: emailInLowerCase,
       password: passwordHash,
+      avatarURL: userProfilePic,
     });
 
     res.status(201).send({
