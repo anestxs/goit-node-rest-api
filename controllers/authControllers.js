@@ -1,9 +1,12 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
 
 import Gravatar from "gravatar";
 
 import User from "../models/User.js";
+
+import mail from "../mail.js";
 
 import { createUserSchema } from "../schemas/usersSchemas.js";
 
@@ -32,11 +35,21 @@ export async function register(req, res, next) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomUUID();
 
     const newUser = await User.create({
       email: emailInLowerCase,
       password: passwordHash,
       avatarURL: userProfilePic,
+      verificationToken: verificationToken,
+    });
+
+    mail.sendEmail({
+      to: emailInLowerCase,
+      from: "crtrever@gmail.com",
+      subject: "Email confirmation on contacts app",
+      html: `<h1>Click on this <a href="http://localhost:3000/api/users/verify/${verificationToken}">link</a> to confirm your email</h1>`,
+      text: `To confirm your email click the link below \nhttp://localhost:3000/api/users/verify/${verificationToken}`,
     });
 
     res.status(201).send({
@@ -75,6 +88,12 @@ export async function login(req, res, next) {
     if (!isMatch) {
       return res.status(401).send({
         message: "Email or password is wrong!",
+      });
+    }
+
+    if (!user.verify) {
+      return res.status(401).send({
+        message: "Email is not verified!",
       });
     }
 
@@ -128,6 +147,80 @@ export async function getUser(req, res, next) {
         email: user.email,
         subscription: user.subscription,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function verify(req, res, next) {
+  const { verificationToken } = req.params;
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { verificationToken },
+      { verify: true, verificationToken: null },
+      { new: true }
+    );
+
+    if (user === null) {
+      return res.status(404).send({
+        message: "User not found",
+      });
+    }
+
+    res.status(200).send({
+      message: "Verification successful",
+    });
+  } catch (error) {
+    next(error);
+  }
+
+  res.end();
+}
+
+export async function reverify(req, res, next) {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).send({ message: "Missing required field email" });
+  }
+
+  const emailInLowerCase = email.toLowerCase();
+
+  try {
+    const user = await User.findOne({ email: emailInLowerCase });
+
+    if (user === null) {
+      return res.status(404).send({
+        message: "User not found",
+      });
+    }
+
+    if (user.verify) {
+      return res.status(400).send({
+        message: "Verification has already been passed",
+      });
+    }
+
+    const verificationToken = crypto.randomUUID();
+
+    await User.findByIdAndUpdate(
+      user._id,
+      { verificationToken },
+      { new: true }
+    );
+
+    mail.sendEmail({
+      to: emailInLowerCase,
+      from: "crtrever@gmail.com",
+      subject: "Email confirmation on contacts app",
+      html: `<h1>Click on this <a href="http://localhost:3000/api/users/verify/${verificationToken}">link</a> to confirm your email</h1>`,
+      text: `To confirm your email click the link below \nhttp://localhost:3000/api/users/verify/${verificationToken}`,
+    });
+
+    res.status(200).send({
+      message: "Verification email sent",
     });
   } catch (error) {
     next(error);
